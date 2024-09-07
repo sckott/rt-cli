@@ -1,4 +1,4 @@
-# rt
+# rt-cli
 
 rt = R test
 
