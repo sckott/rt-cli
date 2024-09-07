@@ -1,5 +1,5 @@
 [package]
-authors = ["Scott Chamberlain"]
+authors = ["Scott Chamberlain", "Josiah Parry"]
 name = "rt-cli"
 version = "0.1.1"
 edition = "2021"
