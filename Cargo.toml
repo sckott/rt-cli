@@ -8,6 +8,8 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0.87"
 argh = "0.1.12"
+dirs = "5.0.1"
+
 glob = "0.3.1"
 regex = "1.10.6"
 semver = "1.0.23"

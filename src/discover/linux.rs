@@ -1,4 +1,4 @@
-use crate::{get_libr_version, RVersion, R_MAJOR_VERSIONS};
+use crate::discover::{get_libr_version, RVersion, RVersions, R_MAJOR_VERSIONS};
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
 
@@ -34,7 +34,6 @@ fn discover_linux_path(root: &str) -> anyhow::Result<Vec<RVersion>> {
             let entry_type = entry.file_type().unwrap();
 
             // We check if it is a directory
-            // Note that Current is only for Mac
             let is_dir = entry_type.is_dir();
 
             // If it meets these criteria we check if it is an R install
@@ -100,7 +99,7 @@ fn detect_r_install(path: &str) -> anyhow::Result<RVersion> {
 }
 
 /// Discover R versions in common linux locations
-pub fn discover_linux() -> anyhow::Result<Vec<RVersion>> {
+pub fn discover_linux() -> anyhow::Result<RVersions> {
     let mut res = R_ROOTS
         .into_iter()
         .map(discover_linux_path)
@@ -116,5 +115,6 @@ pub fn discover_linux() -> anyhow::Result<Vec<RVersion>> {
 
     res.extend(standalone_vers);
 
+    let res = RVersions { versions: res };
     Ok(res)
 }
