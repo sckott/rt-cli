@@ -1,7 +1,10 @@
 use anyhow::anyhow;
 use semver::Version;
-use std::path::PathBuf;
-mod discover;
+use std::{
+    path::PathBuf,
+    process::{Command, Stdio},
+};
+pub mod discover;
 
 const R_MAJOR_VERSIONS: [char; 2] = ['3', '4'];
 
@@ -113,10 +116,39 @@ mod tests {
         let discovered = discover_mac();
         println!("{:#?}", discovered);
     }
+
+    #[test]
+    fn discover_linux_() {
+        let discovered = crate::discover::discover_linux();
+        println!("{:?}", discovered);
+    }
 }
 
 fn get_libr_version(fp: &PathBuf) -> anyhow::Result<Version> {
-    let libr_pc_fp = fp.join("lib").join("pkgconfig").join("libR.pc");
+    let libr_pc_fp = &fp.join("lib").join("pkgconfig").join("libR.pc");
+
+    // If the package config doesn't exist check for the executable
+    // we'll need to run R to get the version
+    if !libr_pc_fp.exists() {
+        // Check for the Rscript executable
+        let rscript_path = fp.join("bin").join("Rscript");
+        if !rscript_path.exists() {
+            return Err(anyhow!("No R executable found"));
+        }
+
+        let child = Command::new(rscript_path)
+            .args([
+                "-e",
+                r#"cat({v <- R.Version();paste(v$major, v$minor, sep = ".")})"#,
+            ])
+            .stdout(Stdio::piped())
+            .spawn()?;
+
+        let out = child.wait_with_output()?;
+        let v_raw = String::from_utf8(out.stdout)?;
+        let v = Version::parse(&v_raw);
+        return Ok(v?);
+    }
 
     let contents = std::fs::read_to_string(&libr_pc_fp)?;
 

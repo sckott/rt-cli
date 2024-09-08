@@ -1,4 +1,4 @@
-use crate::{get_libr_version, RVersion, RVersions, R_MAJOR_VERSIONS};
+use crate::{get_libr_version, RVersion, R_MAJOR_VERSIONS};
 use anyhow::anyhow;
 use std::{
     fs::DirEntry,
@@ -87,7 +87,7 @@ fn detect_r_install(path: &str) -> anyhow::Result<RVersion> {
     let is_dir = entry.is_dir();
 
     // If it meets these criteria we check if it is an R install
-    if is_dir & starts_numeric {
+    if is_dir {
         // R is found at {R_VERSION}/lib/pkgconfig/libR.pc
         let entry_r_root = PathBuf::from(entry);
 
