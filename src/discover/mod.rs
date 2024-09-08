@@ -103,6 +103,12 @@ mod tests {
     }
 
     #[test]
+    fn discover_windows_() {
+        let discovered = crate::discover::discover_windows();
+        println!("{:?}", discovered);
+    }
+
+    #[test]
     fn discover() {
         println!("{:?}", RVersions::discover());
     }
