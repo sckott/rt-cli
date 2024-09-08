@@ -1,6 +1,9 @@
 use anyhow::anyhow;
 use semver::Version;
 use std::path::PathBuf;
+mod discover;
+
+const R_MAJOR_VERSIONS: [char; 2] = ['3', '4'];
 
 #[derive(Debug, Clone)]
 pub struct RVersion {
@@ -29,8 +32,11 @@ impl RVersions {
 pub const R_ROOT: &str = "/Library/Frameworks/R.framework/Versions";
 
 pub fn discover_mac() -> anyhow::Result<RVersions> {
+    // TODO configure this by OS
     let r_root = std::path::Path::new(R_ROOT);
-    let r_ver_iter = r_root.read_dir().unwrap();
+
+    // Read the directory's contents
+    let r_ver_iter = r_root.read_dir()?;
 
     // create an empty RVersions struct
     let mut r_vers = RVersions::default();
@@ -46,7 +52,7 @@ pub fn discover_mac() -> anyhow::Result<RVersions> {
             // If the path starts with a 3 or 4
             // Only R version 3 and 4 are relevant for this. 3 is pushing it
             // 5 doesn't exist yet
-            let starts_numeric = fname.starts_with(['3', '4']);
+            let starts_numeric = fname.starts_with(R_MAJOR_VERSIONS);
 
             // Here we get file type information
             let entry_type = entry.file_type().unwrap();
@@ -66,8 +72,7 @@ pub fn discover_mac() -> anyhow::Result<RVersions> {
                 // If it exists we continue our check
                 if entry_r_root.exists() {
                     // we parse the libR.pc file to get the R version
-                    let binding = entry.path();
-                    let version = get_libr_version(binding).ok()?;
+                    let version = get_libr_version(&entry_r_root).ok()?;
 
                     // Create a new RVersion struct
                     let res = RVersion {
@@ -110,12 +115,8 @@ mod tests {
     }
 }
 
-fn get_libr_version(fp: PathBuf) -> anyhow::Result<Version> {
-    let libr_pc_fp = fp
-        .join("Resources")
-        .join("lib")
-        .join("pkgconfig")
-        .join("libR.pc");
+fn get_libr_version(fp: &PathBuf) -> anyhow::Result<Version> {
+    let libr_pc_fp = fp.join("lib").join("pkgconfig").join("libR.pc");
 
     let contents = std::fs::read_to_string(&libr_pc_fp)?;
 
