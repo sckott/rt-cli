@@ -1,11 +1,8 @@
 use crate::{get_libr_version, RVersion, R_MAJOR_VERSIONS};
 use anyhow::anyhow;
-use std::{
-    fs::DirEntry,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
-const STANDALONE_R_ROOTS: [&'static str; 6] = [
+const STANDALONE_R_ROOTS: [&str; 6] = [
     "/usr/lib/R",
     "/usr/lib64/R",
     "/usr/local/lib/R",
@@ -15,7 +12,7 @@ const STANDALONE_R_ROOTS: [&'static str; 6] = [
 ];
 
 // These will have one or more R versions associated
-const R_ROOTS: [&'static str; 2] = ["/opt/R", "/opt/local/R"];
+const R_ROOTS: [&str; 2] = ["/opt/R", "/opt/local/R"];
 
 // We can get the pkgconfig from libR.pc as well
 // located at /opt/R/4.3.1/lib/pkgconfig.pc
@@ -74,16 +71,7 @@ fn detect_r_install(path: &str) -> anyhow::Result<RVersion> {
 
     let entry = Path::new(path);
 
-    // // get the name of the entry
-    let fname = entry
-        .file_name()
-        .ok_or(anyhow!("Failed to get file name"))?
-        .to_str()
-        .ok_or(anyhow!("Failed to get entry name"))?;
-
-    let starts_numeric = fname.starts_with(R_MAJOR_VERSIONS);
-
-    // // We check if it is a directory
+    // We check if it is a directory
     let is_dir = entry.is_dir();
 
     // If it meets these criteria we check if it is an R install
@@ -102,12 +90,12 @@ fn detect_r_install(path: &str) -> anyhow::Result<RVersion> {
                 root: entry_r_root,
             };
 
-            return Ok(res);
+            Ok(res)
         } else {
-            return res_err_msg;
+            res_err_msg
         }
     } else {
-        return res_err_msg;
+        res_err_msg
     }
 }
 
@@ -126,7 +114,7 @@ pub fn discover_linux() -> anyhow::Result<Vec<RVersion>> {
         .filter_map(|r| r.ok())
         .collect::<Vec<_>>();
 
-    res.extend(standalone_vers.into_iter());
+    res.extend(standalone_vers);
 
     Ok(res)
 }

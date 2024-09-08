@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use semver::Version;
 use std::{
+    path::Path,
     path::PathBuf,
     process::{Command, Stdio},
 };
@@ -124,7 +125,7 @@ mod tests {
     }
 }
 
-fn get_libr_version(fp: &PathBuf) -> anyhow::Result<Version> {
+fn get_libr_version(fp: &Path) -> anyhow::Result<Version> {
     let libr_pc_fp = &fp.join("lib").join("pkgconfig").join("libR.pc");
 
     // If the package config doesn't exist check for the executable
@@ -150,7 +151,7 @@ fn get_libr_version(fp: &PathBuf) -> anyhow::Result<Version> {
         return Ok(v?);
     }
 
-    let contents = std::fs::read_to_string(&libr_pc_fp)?;
+    let contents = std::fs::read_to_string(libr_pc_fp)?;
 
     let regex = regex::Regex::new(r"Version: (\d+\.\d+\.\d+)").unwrap();
     let captures = regex
