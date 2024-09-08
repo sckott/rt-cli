@@ -26,11 +26,7 @@ impl RVersions {
 // https://crates.io/crates/dirs
 
 // https://github.com/r-lib/rig/blob/140115c9b565167670cfc6f303e6c968c563db98/src/macos.rs#L29
-//
 pub const R_ROOT: &str = "/Library/Frameworks/R.framework/Versions";
-pub const R_VERSIONDIR: &str = "{}";
-pub const R_SYSLIBPATH: &str = "{}/Resources/library";
-pub const R_BINPATH: &str = "{}/Resources/R";
 
 pub fn discover_mac() -> anyhow::Result<RVersions> {
     let r_root = std::path::Path::new(R_ROOT);
