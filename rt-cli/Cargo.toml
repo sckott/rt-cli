@@ -1,0 +1,18 @@
+[package]
+authors = ["Scott Chamberlain", "Josiah Parry"]
+name = "rt-cli"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+argh = "0.1.12"
+glob = "0.3.1"
+regex = "1.10.6"
+anyhow = "*"
+rt-lib = { path = "../rt-lib" }
+
+
+[[bin]]
+name = "rt"
+path = "src/main.rs"

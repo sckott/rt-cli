@@ -1,0 +1,13 @@
+[package]
+authors = ["Scott Chamberlain", "Josiah Parry"]
+name = "rt-lib"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0.87"
+dirs = "5.0.1"
+regex = "1.10.6"
+semver = "1.0.23"
+which = "6.0.3"

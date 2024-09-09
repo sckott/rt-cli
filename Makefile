@@ -1,2 +1,2 @@
 install:
-	cargo install --force --path .
+	cargo install --force --path rt-cli
