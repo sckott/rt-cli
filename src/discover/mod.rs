@@ -7,11 +7,9 @@ pub use linux::*;
 pub use windows::*;
 
 use anyhow::anyhow;
+use regex::Regex;
 use semver::Version;
-use std::{
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-};
+use std::path::{Path, PathBuf};
 
 const R_MAJOR_VERSIONS: [char; 2] = ['3', '4'];
 
@@ -21,8 +19,65 @@ pub struct RVersion {
     pub root: PathBuf,
 }
 
+impl RVersion {
+    pub fn default() -> anyhow::Result<Self> {
+        // find the default binary
+        let r_root = which::which("R")?
+            .canonicalize()?
+            .parent()
+            .ok_or(anyhow!("Failed to navigate the R folder"))?
+            .parent()
+            .ok_or(anyhow!("Failed to navigate the R folder"))?
+            .canonicalize()?;
+
+        let ver = read_r_ver(&r_root)?;
+
+        Ok(Self {
+            version: ver,
+            root: r_root,
+        })
+    }
+}
+
+fn read_r_ver(path: &Path) -> anyhow::Result<Version> {
+    // path to the version head
+    let ver_h = path.join("include").join("Rversion.h");
+
+    let content = std::fs::read_to_string(ver_h)?;
+
+    // Define regex patterns for major, minor, and status
+    let major_re = Regex::new(r#"#define R_MAJOR\s+"(\d+)""#).unwrap();
+    let minor_re = Regex::new(r#"#define R_MINOR\s+"(\d+\.\d+)""#).unwrap();
+    let status_re = Regex::new(r#"#define R_STATUS\s+"(.*?)""#).unwrap();
+
+    // Capture the values
+    let major = major_re
+        .captures(&content)
+        .ok_or(anyhow!("Failed to capture the major version"))?
+        .get(1)
+        .ok_or(anyhow!("Failed to capture the major version"))?
+        .as_str();
+    let minor = minor_re
+        .captures(&content)
+        .ok_or(anyhow!("Failed to capture the minor version"))?
+        .get(1)
+        .ok_or(anyhow!("Failed to capture the minor version"))?
+        .as_str();
+    let status = status_re
+        .captures(&content)
+        .ok_or(anyhow!("Failed to capture the version status"))?
+        .get(1)
+        .ok_or(anyhow!("Failed to capture the version status"))?
+        .as_str();
+
+    let status = if status.is_empty() { "" } else { "-devel" };
+
+    Ok(Version::parse(&format!("{major}.{minor}{status}"))?)
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct RVersions {
+    pub default: Option<RVersion>,
     pub versions: Vec<RVersion>,
 }
 
@@ -40,55 +95,15 @@ impl RVersions {
     }
 }
 
-fn get_libr_version(fp: &Path) -> anyhow::Result<Version> {
-    let libr_pc_fp = &fp.join("lib").join("pkgconfig").join("libR.pc");
-
-    // If the package config doesn't exist check for the executable
-    // we'll need to run R to get the version
-    if !libr_pc_fp.exists() {
-        // Check for the Rscript executable
-        let rscript_path = if cfg!(target_os = "windows") {
-            fp.join("bin").join("Rscript.exe")
-        } else {
-            fp.join("bin").join("Rscript")
-        };
-
-        if !rscript_path.exists() {
-            return Err(anyhow!("No R executable found"));
-        }
-
-        let child = Command::new(rscript_path)
-            .args([
-                "-e",
-                r#"cat({v <- R.Version();paste(v$major, v$minor, sep = ".")})"#,
-            ])
-            .stdout(Stdio::piped())
-            .spawn()?;
-
-        let out = child.wait_with_output()?;
-        let v_raw = String::from_utf8(out.stdout)?;
-        let v = Version::parse(&v_raw);
-        return Ok(v?);
-    }
-
-    let contents = std::fs::read_to_string(libr_pc_fp)?;
-
-    let regex = regex::Regex::new(r"Version: (\d+\.\d+\.\d+)").unwrap();
-    let captures = regex
-        .captures(&contents)
-        .ok_or(anyhow!("Failed to extract R version"))?;
-
-    let res = match captures.get(1) {
-        Some(v) => Ok(v.as_str().to_string()),
-        None => Err(anyhow!("Failed to extract R version")),
-    }?;
-
-    Ok(Version::parse(&res)?)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn discover_default() {
+        let default = RVersion::default();
+        println!("{:?}", default);
+    }
 
     #[test]
     fn discover_mac_() {

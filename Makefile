@@ -1,2 +1,2 @@
 install:
-	cargo install --path .
+	cargo install --force --path .

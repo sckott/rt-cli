@@ -1,6 +1,8 @@
-use crate::discover::{get_libr_version, RVersion, RVersions, R_MAJOR_VERSIONS};
+use crate::discover::{RVersion, RVersions, R_MAJOR_VERSIONS};
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
+
+use super::read_r_ver;
 
 const STANDALONE_R_ROOTS: [&str; 6] = [
     "/usr/lib/R",
@@ -44,7 +46,7 @@ fn discover_linux_path(root: &str) -> anyhow::Result<Vec<RVersion>> {
                 // If it exists we continue our check
                 if entry_r_root.exists() {
                     // we parse the libR.pc file to get the R version
-                    let version = get_libr_version(&entry_r_root).ok()?;
+                    let version = read_r_ver(&entry_r_root).ok()?;
 
                     // Create a new RVersion struct
                     let res = RVersion {
@@ -81,7 +83,7 @@ fn detect_r_install(path: &str) -> anyhow::Result<RVersion> {
         // If it exists we continue our check
         if entry_r_root.exists() {
             // we parse the libR.pc file to get the R version
-            let version = get_libr_version(&entry_r_root)?;
+            let version = read_r_ver(&entry_r_root)?;
 
             // Create a new RVersion struct
             let res = RVersion {
@@ -115,6 +117,10 @@ pub fn discover_linux() -> anyhow::Result<RVersions> {
 
     res.extend(standalone_vers);
 
-    let res = RVersions { versions: res };
+    let default = RVersion::default().ok();
+    let res = RVersions {
+        default,
+        versions: res,
+    };
     Ok(res)
 }

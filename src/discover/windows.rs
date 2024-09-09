@@ -1,7 +1,9 @@
-use crate::{discover::get_libr_version, RVersion, RVersions};
+use crate::{RVersion, RVersions};
 use std::{fs::read_dir, path::PathBuf, sync::LazyLock};
 
-const DEFAULT_R_ROOT: &str = r#"C"\Program Files\R"#;
+use super::read_r_ver;
+
+const DEFAULT_R_ROOT: &str = r#"C:\Program Files\R"#;
 static USER_HOME_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| dirs::home_dir());
 
 // Search USER_HOME_DIR
@@ -17,8 +19,8 @@ pub fn discover_windows() -> anyhow::Result<RVersions> {
         })
         .flatten()
         .collect::<Vec<_>>();
-
-    let res = RVersions { versions };
+    let default = RVersion::default().ok();
+    let res = RVersions { default, versions };
     Ok(res)
 }
 
@@ -32,7 +34,7 @@ fn discover_dir_versions(path: &PathBuf) -> anyhow::Result<Vec<RVersion>> {
 
             match is_dir {
                 true => Some(RVersion {
-                    version: get_libr_version(&entry.path()).ok()?,
+                    version: read_r_ver(&entry.path()).ok()?,
                     root: entry.path(),
                 }),
                 false => None,
