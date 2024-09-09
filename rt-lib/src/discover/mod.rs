@@ -52,8 +52,9 @@ impl RVersion {
     /// Creates a new [std::process::Command] calling `R`
     /// pass addtional arguments via the `.args()` method.
     /// ie.
+    /// ```ignore
+    /// rt_lib::RVersion::default().unwrap().r().args("-e", "print('hello world')").spawn()
     /// ```
-    /// RVersion::default().r().args("-e", "print('hello world')").spawn()
     pub fn r(&self) -> Command {
         Command::new(self.root.join("R"))
     }
