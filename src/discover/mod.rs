@@ -9,17 +9,22 @@ pub use windows::*;
 use anyhow::anyhow;
 use regex::Regex;
 use semver::Version;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
-const R_MAJOR_VERSIONS: [char; 2] = ['3', '4'];
-
+/// Represents an installed version of R
 #[derive(Debug, Clone)]
 pub struct RVersion {
+    /// A [semver::Version] representing the version of R
     pub version: Version,
+    /// A [PathBuf] to the root of the R installation
     pub root: PathBuf,
 }
 
 impl RVersion {
+    /// Finds the version of the default R executable
     pub fn default() -> anyhow::Result<Self> {
         // find the default binary
         let r_root = which::which("R")?
@@ -36,6 +41,21 @@ impl RVersion {
             version: ver,
             root: r_root,
         })
+    }
+
+    /// Creates a new [std::process::Command] calling `Rscript`
+    /// pass addtional arguments via the `.args()` method.
+    pub fn rscript(&self) -> Command {
+        Command::new(self.root.join("Rscript"))
+    }
+
+    /// Creates a new [std::process::Command] calling `R`
+    /// pass addtional arguments via the `.args()` method.
+    /// ie.
+    /// ```
+    /// RVersion::default().r().args("-e", "print('hello world')").spawn()
+    pub fn r(&self) -> Command {
+        Command::new(self.root.join("R"))
     }
 }
 

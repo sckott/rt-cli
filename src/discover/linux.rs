@@ -1,4 +1,4 @@
-use crate::discover::{RVersion, RVersions, R_MAJOR_VERSIONS};
+use crate::discover::{RVersion, RVersions};
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
 
@@ -27,11 +27,6 @@ fn discover_linux_path(root: &str) -> anyhow::Result<Vec<RVersion>> {
             // Extract the entry
             let entry = entry.ok()?;
 
-            // get the name of the entry
-            let fname = entry.file_name().into_string().ok()?;
-
-            let starts_numeric = fname.starts_with(R_MAJOR_VERSIONS);
-
             // Here we get file type information
             let entry_type = entry.file_type().unwrap();
 
@@ -39,7 +34,7 @@ fn discover_linux_path(root: &str) -> anyhow::Result<Vec<RVersion>> {
             let is_dir = entry_type.is_dir();
 
             // If it meets these criteria we check if it is an R install
-            if is_dir & starts_numeric {
+            if is_dir {
                 // R is found at {R_VERSION}/lib/pkgconfig/libR.pc
                 let entry_r_root = entry.path();
 

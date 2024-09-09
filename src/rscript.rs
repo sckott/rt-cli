@@ -1,10 +1,15 @@
-use std::process::{Command, ExitStatus};
-use std::io::Result;
+use anyhow::Result;
+use std::process::ExitStatus;
+
+use rt_lib::RVersion;
 
 // Run Rscript from Rust
 pub fn run_rscript(r_call: &str) -> Result<ExitStatus> {
     // Start the subprocess
-    let mut child = Command::new("Rscript").args(["-e", r_call]).spawn()?;
+    let mut child = RVersion::default()?
+        .rscript()
+        .args(["-e", r_call])
+        .spawn()?;
 
     // Wait for the subprocess to exit
     let exit_status = child.wait()?;

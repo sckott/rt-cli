@@ -2,7 +2,6 @@ extern crate glob;
 use argh::FromArgs;
 use glob::glob_with;
 use glob::MatchOptions;
-use std::io::Result;
 use std::usize;
 
 mod rscript;
@@ -52,11 +51,11 @@ struct ListTestFiles {
 }
 
 #[derive(PartialEq, Clone, Debug, FromArgs)]
-#[argh(subcommand, name = "versions")]
+#[argh(subcommand, name = "r-vers")]
 /// List available versions of R
 struct ListVersions {}
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let args: Rt = argh::from_env();
     match args.subcommand {
         Subcommands::One(cmd) => {
