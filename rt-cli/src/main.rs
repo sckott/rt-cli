@@ -1,8 +1,8 @@
 extern crate glob;
+use argh::FromArgs;
 use glob::glob_with;
 use glob::MatchOptions;
-use argh::FromArgs;
-use std::io::Result;
+use std::usize;
 
 mod rscript;
 use crate::rscript::run_rscript;
@@ -20,6 +20,7 @@ enum Subcommands {
     One(TestThatDir),
     Two(TestThatFile),
     Three(ListTestFiles),
+    Four(ListVersions),
 }
 
 #[derive(PartialEq, Clone, Debug, FromArgs)]
@@ -49,7 +50,12 @@ struct ListTestFiles {
     dir: String,
 }
 
-fn main() -> Result<()> {
+#[derive(PartialEq, Clone, Debug, FromArgs)]
+#[argh(subcommand, name = "r-vers")]
+/// List available versions of R
+struct ListVersions {}
+
+fn main() -> anyhow::Result<()> {
     let args: Rt = argh::from_env();
     match args.subcommand {
         Subcommands::One(cmd) => {
@@ -76,6 +82,34 @@ fn main() -> Result<()> {
                     Ok(path) => println!("{}", path.display()),
                     Err(e) => println!("{:?}", e),
                 }
+            }
+        }
+        Subcommands::Four(_) => {
+            let vers = rt_lib::RVersions::discover();
+            match vers {
+                Ok(v) => {
+                    let mut vv = v
+                        .versions
+                        .into_iter()
+                        .map(|v| v.version)
+                        .collect::<Vec<_>>();
+                    vv.sort();
+                    // check which one is the default
+
+                    let is_default = match v.default {
+                        Some(v) => vv.iter().position(|vv| vv == &v.version),
+                        None => None,
+                        // no one will ever have this many R installations...
+                        // simplifies the printing in the CLI
+                    }
+                    .unwrap_or(usize::MAX);
+
+                    vv.into_iter().enumerate().for_each(|(i, v)| {
+                        let def_msg = if i == is_default { "(default)" } else { "" };
+                        println!("  R {v} {}", def_msg)
+                    })
+                }
+                Err(_) => eprintln!("Unable to find any R installation in common locations."),
             }
         }
     }
