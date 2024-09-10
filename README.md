@@ -3,7 +3,7 @@
 rt = R test
 
 ```
-rt --help
+rt help
 ```
 
 ```
@@ -18,4 +18,5 @@ Commands:
   dir               Test an R package using testthat
   file              Test a single file using testthat
   list              List test files in an R package
+  r-vers            List available versions of R
 ```
