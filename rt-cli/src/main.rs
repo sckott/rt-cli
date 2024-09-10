@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
             owned_string.insert_str(0, &cmd.dir);
 
             let options = MatchOptions {
-                case_sensitive: true,
+                case_sensitive: false,
                 require_literal_separator: false,
                 require_literal_leading_dot: false,
             };
