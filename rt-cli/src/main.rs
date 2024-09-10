@@ -17,10 +17,10 @@ struct Rt {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand)]
 enum Subcommands {
-    One(TestThatDir),
-    Two(TestThatFile),
-    Three(ListTestFiles),
-    Four(ListVersions),
+    Dir(TestThatDir),
+    File(TestThatFile),
+    List(ListTestFiles),
+    Versions(ListVersions),
 }
 
 #[derive(PartialEq, Clone, Debug, FromArgs)]
@@ -58,33 +58,53 @@ struct ListVersions {}
 fn main() -> anyhow::Result<()> {
     let args: Rt = argh::from_env();
     match args.subcommand {
-        Subcommands::One(cmd) => {
+        Subcommands::Dir(cmd) => {
             let devtools_call = format!("devtools::test('{}')", cmd.dir);
             run_rscript(&devtools_call)?;
         }
-        Subcommands::Two(cmd) => {
+        Subcommands::File(cmd) => {
             let testthat_call =
                 format!("devtools::load_all(); testthat::test_file('{}')", cmd.file);
             run_rscript(&testthat_call)?;
         }
-        Subcommands::Three(cmd) => {
+        Subcommands::List(cmd) => {
             let mut owned_string: String = "/tests/testthat/test-*.R".to_owned();
             owned_string.insert_str(0, &cmd.dir);
-            // println!("{}", owned_string);
 
             let options = MatchOptions {
                 case_sensitive: true,
                 require_literal_separator: false,
                 require_literal_leading_dot: false,
             };
-            for entry in glob_with(&owned_string, options).expect("Failed to read glob pattern") {
-                match entry {
-                    Ok(path) => println!("{}", path.display()),
-                    Err(e) => println!("{:?}", e),
-                }
+            let globs = glob_with(&owned_string, options).expect("Failed to read glob pattern");
+
+            // Collect globs into a vector of strings
+            // if there is an error it will be displayed as
+            // a string
+            // this lets us count how many paths were found
+            let tests = globs
+                .map(|g| match g {
+                    Ok(p) => p.display().to_string(),
+                    Err(e) => e.to_string(),
+                })
+                .collect::<Vec<_>>();
+
+            // if no files were found we use `eprintln!()` to write to stderr
+            // otherwise, we print each file
+            if tests.is_empty() {
+                eprintln!("❗️ No tests found.")
+            } else {
+                // here we check to see if there is 1 or more values so that
+                // we can use a plural if needed
+                let n = tests.len();
+                let test_or_tests = if n > 1 { "tests" } else { "test" };
+                println!("Found {} {test_or_tests}", tests.len());
+                // note that we must use `for_each()` instead of `.map()`
+                // when we want to iterate but not produce values from the iteration
+                tests.iter().for_each(|t| println!("{t}"));
             }
         }
-        Subcommands::Four(_) => {
+        Subcommands::Versions(_) => {
             let vers = rt_lib::RVersions::discover();
             match vers {
                 Ok(v) => {
