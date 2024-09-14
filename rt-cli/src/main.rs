@@ -69,9 +69,30 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Subcommands::File(cmd) => {
-            let testthat_call =
-                format!("devtools::load_all(); testthat::test_file('{}')", cmd.file);
-            run_rscript(&testthat_call)?;
+            // let file = format!("{}", &cmd.file);
+            let file = cmd.file.to_string();
+            let mut ancestors = Path::new(&file).ancestors();
+            let parent = ancestors.next();
+            println!("{:?}", &parent);
+            let grandparent = ancestors.next();
+            println!("{:?}", &grandparent);
+            let grandgrandparent = ancestors.next();
+            println!("{:?}", &grandgrandparent);
+            let grandgrandgrandparent = ancestors.next();
+            println!("{:?}", &grandgrandgrandparent);
+            // let grandparent = ancestors.skip(2).next().unwrap();
+            println!(
+                "{}",
+                &grandgrandgrandparent.unwrap().join("DESCRIPTION").display()
+            );
+            let pkg_exists = grandgrandgrandparent.unwrap().join("DESCRIPTION").exists();
+            if !pkg_exists {
+                eprintln!("Error: not an R package")
+            } else {
+                let testthat_call =
+                    format!("devtools::load_all(); testthat::test_file('{}')", cmd.file);
+                run_rscript(&testthat_call)?;
+            }
         }
         Subcommands::List(cmd) => {
             let mut owned_string: String = "/tests/testthat/test-*.R".to_owned();
