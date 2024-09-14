@@ -2,6 +2,7 @@ extern crate glob;
 use argh::FromArgs;
 use glob::glob_with;
 use glob::MatchOptions;
+use std::path::Path;
 use std::usize;
 
 mod rscript;
@@ -59,8 +60,13 @@ fn main() -> anyhow::Result<()> {
     let args: Rt = argh::from_env();
     match args.subcommand {
         Subcommands::Dir(cmd) => {
-            let devtools_call = format!("devtools::test('{}')", cmd.dir);
-            run_rscript(&devtools_call)?;
+            let pkg_exists = Path::new(&format!("{}/DESCRIPTION", &cmd.dir)).exists();
+            if !pkg_exists {
+                eprintln!("Error: not an R package")
+            } else {
+                let devtools_call = format!("devtools::test('{}')", cmd.dir);
+                run_rscript(&devtools_call)?;
+            }
         }
         Subcommands::File(cmd) => {
             let testthat_call =
