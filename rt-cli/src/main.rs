@@ -2,6 +2,7 @@ extern crate glob;
 use argh::FromArgs;
 use glob::glob_with;
 use glob::MatchOptions;
+use std::path::Path;
 use std::usize;
 
 mod rscript;
@@ -39,6 +40,14 @@ struct TestThatFile {
     /// path to a test file
     #[argh(positional, default = r#"String::from(".")"#)]
     file: String,
+
+    /// path to the package (default `.`)
+    #[argh(option, short = 'P', default = r#"".".to_string()"#)]
+    pkg_dir: String,
+
+    /// do not load the development package
+    #[argh(switch, short = 's')]
+    standalone: bool,
 }
 
 #[derive(PartialEq, Clone, Debug, FromArgs)]
@@ -59,13 +68,51 @@ fn main() -> anyhow::Result<()> {
     let args: Rt = argh::from_env();
     match args.subcommand {
         Subcommands::Dir(cmd) => {
-            let devtools_call = format!("devtools::test('{}')", cmd.dir);
-            run_rscript(&devtools_call)?;
+            let pkg_exists = Path::new(&format!("{}/DESCRIPTION", &cmd.dir)).exists();
+            if !pkg_exists {
+                eprintln!("Error: not an R package")
+            } else {
+                let devtools_call = format!("devtools::test('{}')", cmd.dir);
+                run_rscript(&devtools_call)?;
+            }
         }
         Subcommands::File(cmd) => {
-            let testthat_call =
-                format!("devtools::load_all(); testthat::test_file('{}')", cmd.file);
-            run_rscript(&testthat_call)?;
+            // first check the file exists
+            let exists = std::fs::exists(&cmd.file);
+            if let Err(_) = exists {
+                eprintln!("Provided test file does not exists at that path");
+                return Ok(());
+            }
+            // Check if this is a standalone execution
+            // if so, we do not run load_all()
+            match cmd.standalone {
+                true => {
+                    let _ = run_rscript(&format!("testthat::test_file('{}')", cmd.file));
+                    return Ok(());
+                }
+                false => {
+                    // check that the package directory exists
+                    let pkg_dir_exists = std::fs::exists(&cmd.pkg_dir);
+                    if let Err(_) = pkg_dir_exists {
+                        eprintln!(
+                            "Package cannot be found at the path `{}`",
+                            std::path::Path::new(&cmd.pkg_dir)
+                                .canonicalize() // providing canonicalized path so the user knows what is being interpreted by cli
+                                .unwrap()
+                                .as_path()
+                                .to_str()
+                                .unwrap()
+                        )
+                    }
+
+                    let cmd = format!(
+                        r#"devtools::load_all('{}');testthat::test_file('{}')"#,
+                        cmd.pkg_dir, cmd.file
+                    );
+                    let _ = run_rscript(&cmd);
+                    return Ok(());
+                }
+            }
         }
         Subcommands::List(cmd) => {
             let mut owned_string: String = "/tests/testthat/test-*.R".to_owned();
