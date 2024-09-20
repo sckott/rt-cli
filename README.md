@@ -22,3 +22,11 @@ Commands:
   list              List test files in an R package
   r-vers            List available versions of R
 ```
+
+## Install
+
+`cargo install --git https://github.com/sckott/rt-cli.git`
+
+OR
+
+Run `make` after cloning this repo
