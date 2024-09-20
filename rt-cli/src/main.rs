@@ -9,7 +9,7 @@ mod rscript;
 use crate::rscript::run_rscript;
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// CLI tool for running tests in R packages
+/// CLI tool for running R tests
 struct Rt {
     #[argh(subcommand)]
     subcommand: Subcommands,
